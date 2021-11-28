@@ -15,7 +15,13 @@ const typeDefs = gql`
 
   type List{
     name: String!
-    list: [String!]
+    list: [ListItem]
+  }
+
+  type ListItem{
+    product_name: String!
+    product_quantity: Int!
+    product_units_value: String!
   }
 
   type Query {
@@ -26,6 +32,7 @@ const typeDefs = gql`
     deletelist(_id: ID!, name: String!): Boolean
     rename(_id: ID!, name: String!, newname: String!): Boolean
     addnewlist(_id: ID!, name: String!): Boolean
+    addnewlistItem(_id: ID!, name: String!, product_name: String!, product_quantity: Int!, product_units_value: String! ): Boolean
   }
 
 `;
@@ -39,6 +46,7 @@ const resolvers = {
     deletelist: (parent, args, context) => context.dataSources.users.changeUser(args._id, args.name),
     rename: (parent, args, context) => context.dataSources.users.renameList(args._id, args.name, args.newname),
     addnewlist: (parent, args, context) => context.dataSources.users.addNewListName(args._id, args.name),
+    addnewlistItem: (parent, args, context) => context.dataSources.users.addnewlistItem(args._id, args.name, args.product_name, args.product_quantity, args.product_units_value),
   },
 };
 

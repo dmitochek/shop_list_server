@@ -55,6 +55,19 @@ class User extends MongoDataSource
         console.log(result);
         return true;
     }
+
+    //list: {product_name: ... , product_quantity: ... , product_units_value: ...}
+    async addnewlistItem(_id, name, product_name, product_quantity, product_units_value)
+    {
+        let result = await this.collection.updateOne
+            (
+                { _id: ObjectID(_id) },
+                { $push: { "lists.$[elem].list": { product_name: product_name, product_quantity: product_quantity, product_units_value: product_units_value } } },
+                { arrayFilters: [{ "elem.name": name }] }
+            );
+        console.log(result);
+        return true;
+    }
 }
 
 exports.default = User;
