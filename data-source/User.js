@@ -1,73 +1,53 @@
 const { MongoDataSource } = require('apollo-datasource-mongodb');
 const ObjectID = require('mongodb').ObjectID;
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.CLIENT_ID);
 
 class User extends MongoDataSource
 {
 
-    async getUser(id)
+    async checkUser(token)
     {
-        let result = await this.collection.findOne({ _id: ObjectID(id) });
-        console.log(result);
-        return result;
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.CLIENT_ID
+        });
+        return ticket.getPayload();
     }
 
-    async changeUser(_id, name)
+    async getUser(token)
     {
-        let result = await this.collection.updateOne
-            (
-                { _id: ObjectID(_id) },
-                { $pull: { lists: { name: name } } }
-            );
-        if (result.modifiedCount >= 1)
-        {
-            return true;
-        }
-        else
+        const { email } = await this.checkUser(token);
+        let result = await this.collection.findOne({ email: email });
+        return result;
+
+    }
+
+
+    async tokenCheck(token)
+    {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.CLIENT_ID
+        });
+
+        const { name, email, picture } = ticket.getPayload();
+
+        if (email === undefined)
         {
             return false;
         }
-    }
 
-    async renameList(_id, name, newname)
-    {
-        let result = await this.collection.findOneAndUpdate
-            (
-                { _id: ObjectID(_id) },
-                { $set: { "lists.$[elem].name": newname } },
-                { arrayFilters: [{ "elem.name": name }] }
-            );
-        console.log(result);
-        return result.lastErrorObject.updatedExisting;
-    }
+        let result = await this.collection.findOne({ email: email });
 
-    async addNewListName(_id, name)
-    {
-        let result = await this.collection.updateOne
-            (
-                { _id: ObjectID(_id) },
-                {
-                    $addToSet:
-                    {
-                        lists: { name: name, list: [] }
-                    }
-                },
-            );
-        console.log(result);
+        if (result === null)
+        {
+            let result = await this.collection.insertOne({ email: email, category_order: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+        }
+
         return true;
     }
 
-    //list: {product_name: ... , product_quantity: ... , product_units_value: ...}
-    async addnewlistItem(_id, name, product_name, product_quantity, product_units_value)
-    {
-        let result = await this.collection.updateOne
-            (
-                { _id: ObjectID(_id) },
-                { $push: { "lists.$[elem].list": { product_name: product_name, product_quantity: product_quantity, product_units_value: product_units_value } } },
-                { arrayFilters: [{ "elem.name": name }] }
-            );
-        console.log(result);
-        return true;
-    }
 }
 
 exports.default = User;
