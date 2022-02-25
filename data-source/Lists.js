@@ -169,6 +169,36 @@ class Lists extends MongoDataSource
 
     }
 
+    async editProduct(token, listname, product, newcategory, newunit, newnote, newquanity)
+    {
+        const { email } = await this.checkUser(token);
+
+        let { _id } = await client.db("shopDB").collection('users').findOne({ email: email });
+
+        let res = await this.collection.findOne(
+            { users: { $in: [_id.toString()] }, name: listname }
+        );
+
+        if (res === null) return false;
+
+        let product_id = null;
+        await Promise.all(res.list.map(async (elem) =>
+        {
+            const eachproduct = await client.db("shopDB").collection('products').findOne({ _id: ObjectID(elem.product_id) });
+            if (product === eachproduct.name)
+                product_id = elem.product_id;
+        }));
+
+        if (product_id === null) return false;
+
+        await this.collection.findOneAndUpdate(
+            { users: { $in: [_id.toString()] }, name: listname, "list.product_id": product_id },
+            { $set: { "list.$.quanity": newquanity, "list.$.unit": newunit, "list.$.category": newcategory, "list.$.note": newnote } }
+        );
+
+        return true;
+    }
+
 
 }
 

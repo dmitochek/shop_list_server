@@ -38,10 +38,23 @@ class Products extends MongoDataSource
         await Promise.all(list.map(async product =>
         {
             const { name, category } = await client.db("shopDB").collection('products').findOne({ _id: ObjectID(product.product_id) });
-            result = [...result, { name: name, category: category }];
+            result = [...result, { name: name, category: product.category }];
+            //result = [...result, { name: name, category: category }]; return to this variant
         }));
 
         return result;
+
+    }
+
+    async searchitems(token, name)
+    {
+        const { email } = await this.checkUser(token);
+
+        let res = await this.collection.find({ name: { $regex: name } }).toArray();
+
+        console.log(email, res);
+
+        return res;
 
     }
 }
