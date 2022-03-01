@@ -32,6 +32,15 @@ const typeDefs = gql`
     checked: Boolean!
   }
 
+  type EditItem {
+    name: String!
+    quanity: Float!
+    note: String
+    unit: Int!
+    category: Int!
+    checked: Boolean!
+  }
+
   type Product {
     name: String!
     category: Int!
@@ -45,7 +54,7 @@ const typeDefs = gql`
     getlists(token: String!): [List]
     getpopularproducts(token: String!): [Product]
     getlistproducts(token: String!, listname: String!): [Product]
-    getproduct(token: String!, listname: String!, product: String!): Item
+    getproducts(token: String!, listname: String!): [EditItem]
     searchproducts(token: String!, name: String!): [Product]
   }
   
@@ -67,7 +76,7 @@ const resolvers = {
     getlists: (parent, args, context) => context.dataSources.lists.getLists(args.token),
     getpopularproducts: (parent, args, context) => context.dataSources.products.getPopular(args.token),
     getlistproducts: (parent, args, context) => context.dataSources.products.getlistitems(args.token, args.listname),
-    getproduct: (parent, args, context) => context.dataSources.lists.getProduct(args.token, args.listname, args.product),
+    getproducts: (parent, args, context) => context.dataSources.lists.getProducts(args.token, args.listname),
     searchproducts: (parent, args, context) => context.dataSources.products.searchitems(args.token, args.name),
   },
   Mutation:

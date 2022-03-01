@@ -132,7 +132,7 @@ class Lists extends MongoDataSource
         return true;
     }
 
-    async getProduct(token, listname, product)
+    async getProducts(token, listname)
     {
 
         const { email } = await this.checkUser(token);
@@ -144,28 +144,17 @@ class Lists extends MongoDataSource
             { users: { $in: [_id.toString()] } }
         );
 
-        let res = await client.db("shopDB").collection('products').find({ name: product }).toArray();
+        console.log(list);
 
-        let product_id = null, temp_id;
-        res.forEach(element =>
+        let serverAnswer = [];
+
+        for (let i = 0; i < list.length; ++i)
         {
-            if (element.user_id !== null && element.user_id.includes(_id.toString()))
-            {
-                product_id = element._id;
-            }
-            temp_id = element._id;
-        });
+            let { name } = await client.db("shopDB").collection('products').findOne({ _id: ObjectID(list[i].product_id) });
+            serverAnswer = [...serverAnswer, Object.assign({ name: name }, list[i])];
+        }
 
-        if (product_id === null) product_id = temp_id;
-
-        let server_answer;
-        list.forEach(element =>
-        {
-            if (element.product_id === product_id.toString())
-                server_answer = element;
-        });
-
-        return server_answer;
+        return serverAnswer;
 
     }
 
