@@ -49,13 +49,18 @@ const typeDefs = gql`
     raiting: Int!
   }
 
+  type SearchProduct {
+    name: String!
+    checked: Boolean!
+  }
+
   type Query {
     getuser(token: String!): User
     getlists(token: String!): [List]
     getpopularproducts(token: String!): [Product]
     getlistproducts(token: String!, listname: String!): [Product]
     getproducts(token: String!, listname: String!): [EditItem]
-    searchproducts(token: String!, name: String!): [Product]
+    searchproducts(token: String!, name: String!, listname: String!): [SearchProduct]
   }
   
   type Mutation {
@@ -66,6 +71,9 @@ const typeDefs = gql`
     removelist(token: String!, _id: String!): Boolean
     createnewlist(token: String!, newname: String!): Boolean
     editproduct(token: String!, listname: String!, product: String!, newcategory: Int!, newunit: Int!, newnote: String, newquanity: Float!): Boolean
+    editproductssate(token: String!, listname: String!, listarray: [[String!]], liststates: [[Boolean!]]): Boolean
+    newproduct(token: String!, listname: String!, product: String!): Boolean
+    deleteproduct(token: String!, listname: String!, product: String!): Boolean
   }
 `;
 
@@ -77,7 +85,7 @@ const resolvers = {
     getpopularproducts: (parent, args, context) => context.dataSources.products.getPopular(args.token),
     getlistproducts: (parent, args, context) => context.dataSources.products.getlistitems(args.token, args.listname),
     getproducts: (parent, args, context) => context.dataSources.lists.getProducts(args.token, args.listname),
-    searchproducts: (parent, args, context) => context.dataSources.products.searchitems(args.token, args.name),
+    searchproducts: (parent, args, context) => context.dataSources.products.searchitems(args.token, args.name, args.listname),
   },
   Mutation:
   {
@@ -89,6 +97,9 @@ const resolvers = {
     createnewlist: (parent, args, context) => context.dataSources.lists.createList(args.token, args.newname),
     editproduct: (parent, args, context) => context.dataSources.lists.editProduct(args.token, args.listname,
       args.product, args.newcategory, args.newunit, args.newnote, args.newquanity),
+    editproductssate: (parent, args, context) => context.dataSources.lists.changeProductsStates(args.token, args.listname, args.listarray, args.liststates),
+    newproduct: (parent, args, context) => context.dataSources.lists.newProduct(args.token, args.listname, args.product),
+    deleteproduct: (parent, args, context) => context.dataSources.lists.deleteProduct(args.token, args.listname, args.product),
   }
 };
 

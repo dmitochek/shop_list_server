@@ -46,15 +46,43 @@ class Products extends MongoDataSource
 
     }
 
-    async searchitems(token, name)
+    async searchitems(token, name, listname)
     {
         const { email } = await this.checkUser(token);
 
+        let { _id } = await client.db("shopDB").collection('users').findOne({ email: email });
+
+        let { list } = await client.db("shopDB").collection('lists').findOne(
+            { name: listname },
+            { users: { $in: [_id.toString()] } }
+        );
+
+        let checked = [];
+        await Promise.all(list.map(async product =>
+        {
+            let result = await this.collection.findOne({ _id: ObjectID(product.product_id) });
+            checked.push(result.name);
+        }));
+
         let res = await this.collection.find({ name: { $regex: name } }).toArray();
 
-        console.log(email, res);
+        let serverAnswer = [];
 
-        return res;
+        res.forEach(element =>
+        {
+            if (checked.includes(element.name))
+                serverAnswer.push({ name: element.name, checked: true });
+            else
+                serverAnswer.push({ name: element.name, checked: false });
+        });
+
+        console.log(serverAnswer);
+        if (serverAnswer.length >= 15)
+        {
+            serverAnswer.splice(15);
+            return serverAnswer;
+        }
+        else return serverAnswer;
 
     }
 }

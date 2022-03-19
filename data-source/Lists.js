@@ -188,6 +188,137 @@ class Lists extends MongoDataSource
         return true;
     }
 
+    async changeProductsStates(token, listname, listarray, liststates)
+    {
+
+        const { email } = await this.checkUser(token);
+
+        let { _id } = await client.db("shopDB").collection('users').findOne({ email: email });
+
+        let { list } = await this.collection.findOne(
+            { name: listname },
+            { users: { $in: [_id.toString()] } }
+        );
+
+        let products = [], productsIDs = [];
+        for (let i = 0; i < list.length; ++i)
+        {
+            let { name } = await client.db("shopDB").collection('products').findOne({ _id: ObjectID(list[i].product_id) });
+            productsIDs.push(list[i].product_id);
+            products.push(name);
+        }
+
+
+        await Promise.all(listarray.map(async (elem, index) =>
+        {
+            for (let i = 0; i < elem.length; ++i)
+            {
+                for (let j = 0; j < list.length; ++j)
+                    if (products[productsIDs.indexOf(list[j].product_id)] === elem[i])
+                    {
+
+                        let res = await this.collection.updateOne(
+                            { name: listname, users: { $in: [_id.toString()] } },
+                            { $set: { "list.$[element].checked": liststates[index][i] } },
+                            { arrayFilters: [{ "element.product_id": list[j].product_id }] }
+                        );
+
+                    }
+            }
+        }
+        ));
+
+
+        return true;
+    }
+
+    async newProduct(token, listname, product)
+    {
+        const { email } = await this.checkUser(token);
+
+        let { _id } = await client.db("shopDB").collection('users').findOne({ email: email });
+
+        let { list } = await this.collection.findOne(
+            { name: listname },
+            { users: { $in: [_id.toString()] } }
+        );
+
+        let res = await client.db("shopDB").collection('products').find({ name: product }).toArray();
+
+        let id = null, num;
+        res.forEach((elem, index) =>
+        {
+            if (elem.user_id === _id.toString())
+            {
+                id = elem._id.toString();
+                num = index;
+            }
+
+            if (id === null && elem.user_id === null)
+            {
+                id = elem._id.toString();
+                num = index;
+            }
+
+        });
+
+        let answer = await this.collection.updateOne(
+            { name: listname, users: { $in: [_id.toString()] } },
+            { $push: { list: { product_id: id, quanity: res[num].diff_step, note: null, unit: res[num].unit, category: res[num].category, checked: false } } }
+        );
+
+
+        return true;
+
+    }
+
+
+    async deleteProduct(token, listname, product)
+    {
+        const { email } = await this.checkUser(token);
+
+        let { _id } = await client.db("shopDB").collection('users').findOne({ email: email });
+
+        let { list } = await this.collection.findOne(
+            { name: listname },
+            { users: { $in: [_id.toString()] } }
+        );
+
+        let res = await client.db("shopDB").collection('products').find({ name: product }).toArray();
+
+        let id = null, num;
+        res.forEach((elem, index) =>
+        {
+            if (elem.user_id === _id.toString())
+            {
+                id = elem._id.toString();
+                num = index;
+            }
+
+            if (id === null && elem.user_id === null)
+            {
+                id = elem._id.toString();
+                num = index;
+            }
+
+        });
+
+        let updatedList = [];
+        list.map((elem) =>
+        {
+            if (elem.product_id !== id) updatedList.push(elem);
+        }
+        );
+
+        console.log(updatedList);
+
+        let result = await this.collection.updateOne(
+            { name: listname, users: { $in: [_id.toString()] } },
+            { $set: { list: updatedList } }
+        );
+
+        return true;
+    }
 
 }
 
